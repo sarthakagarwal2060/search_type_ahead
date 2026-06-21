@@ -1,20 +1,3 @@
-<style>
-  body {
-    background-color: #121212 !important;
-    color: #e0e0e0 !important;
-  }
-  h1, h2, h3, h4, h5, h6 {
-    color: #ffffff !important;
-    border-bottom-color: #333333 !important;
-  }
-  table th, table td {
-    border-color: #333333 !important;
-  }
-  code {
-    background-color: #2d2d2d !important;
-    color: #ffaa00 !important;
-  }
-</style>
 
 # Project Report: Distributed Search Typeahead Engine
 
