@@ -12,23 +12,30 @@ Our system is built using modern distributed system principles to ensure horizon
 
 ```mermaid
 graph TD
-    Client[User Browser UI] -->|HTTP :80| Nginx[Nginx Load Balancer]
-    Nginx -->|Round Robin| API1[FastAPI Node 1]
-    Nginx -->|Round Robin| API2[FastAPI Node 2]
+    Client["User Browser UI"] -->|"HTTP :80"| Nginx["Nginx Load Balancer"]
     
-    API1 & API2 -->|Reads/Writes| Postgres[(PostgreSQL 15)]
-    API1 & API2 -->|Consistent Hashing| RedisCluster
+    subgraph "API Tier"
+        Nginx -->|"Round Robin"| API1["FastAPI Node 1"]
+        Nginx -->|"Round Robin"| API2["FastAPI Node 2"]
+    end
     
-    subgraph Redis Cluster
-        Redis1[Redis Node 1]
-        Redis2[Redis Node 2]
-        Redis3[Redis Node 3]
+    subgraph "Data Tier"
+        RedisCluster["Redis Cluster (3 Nodes)"]
+        Postgres[("PostgreSQL 15")]
     end
-
-    subgraph Background Tasks
-        BatchWriter[Async Batch Writer] --> Postgres
-        BatchWriter -.->|Threshold Trigger| RedisCluster
+    
+    API1 -->|"Consistent Hashing"| RedisCluster
+    API2 -->|"Consistent Hashing"| RedisCluster
+    
+    API1 -->|"Reads / Writes"| Postgres
+    API2 -->|"Reads / Writes"| Postgres
+    
+    subgraph "Background Tasks"
+        BatchWriter["Async Batch Writer"]
     end
+    
+    BatchWriter -->|"Flushes Queue"| Postgres
+    BatchWriter -.->|"Threshold Trigger"| RedisCluster
 ```
 
 ---
