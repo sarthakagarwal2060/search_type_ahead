@@ -9,10 +9,8 @@ const debugInfo = document.getElementById('debugInfo');
 const debugContent = document.getElementById('debugContent');
 const toast = document.getElementById('toast');
 
-let debounceTimer = null;
 let currentFocus = -1;
-
-const API_BASE = 'http://localhost:8000';
+const API_BASE = '';
 
 // Format number (e.g., 1500000 -> 1.5M, 1500 -> 1.5k)
 function formatNumber(num) {
@@ -23,13 +21,16 @@ function formatNumber(num) {
 
 // Debounce function
 function debounce(func, delay) {
+    let timer = null;
     return function() {
         const context = this;
         const args = arguments;
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => func.apply(context, args), delay);
+        clearTimeout(timer);
+        timer = setTimeout(() => func.apply(context, args), delay);
     }
 }
+
+const debouncedFetchSuggestions = debounce(fetchSuggestions, 300);
 
 // Fetch Suggestions
 async function fetchSuggestions(query) {
@@ -42,10 +43,14 @@ async function fetchSuggestions(query) {
     try {
         const response = await fetch(`${API_BASE}/suggest?q=${encodeURIComponent(query)}`);
         const data = await response.json();
-        renderSuggestions(data, query);
         
-        if (debugToggle.checked) {
-            updateDebugInfo(query);
+        const results = data.results || [];
+        const meta = data.meta || null;
+        
+        renderSuggestions(results, query);
+        
+        if (debugToggle.checked && meta) {
+            debugContent.textContent = JSON.stringify(meta, null, 2);
         }
     } catch (error) {
         console.error("Error fetching suggestions:", error);
@@ -103,7 +108,8 @@ async function fetchTrending() {
     try {
         const response = await fetch(`${API_BASE}/suggest?q=`);
         const data = await response.json();
-        renderTrending(data);
+        const results = data.results || [];
+        renderTrending(results);
     } catch (error) {
         console.error("Error fetching trending:", error);
     }
@@ -127,16 +133,7 @@ function renderTrending(data) {
     });
 }
 
-// Update Debug Info
-async function updateDebugInfo(query) {
-    try {
-        const response = await fetch(`${API_BASE}/cache/debug?prefix=${encodeURIComponent(query)}`);
-        const data = await response.json();
-        debugContent.textContent = JSON.stringify(data, null, 2);
-    } catch (error) {
-        debugContent.textContent = "Error fetching debug info";
-    }
-}
+// Debug info is now handled inline in fetchSuggestions
 
 // Submit Search
 async function submitSearch(query) {
@@ -178,7 +175,7 @@ function showToast(message) {
 searchInput.addEventListener('input', (e) => {
     const val = e.target.value;
     clearButton.classList.toggle('hidden', val.length === 0);
-    debounce(fetchSuggestions, 300)(val);
+    debouncedFetchSuggestions(val);
 });
 
 searchInput.addEventListener('focus', () => {
@@ -252,9 +249,6 @@ function removeActive(items) {
 debugToggle.addEventListener('change', (e) => {
     if (e.target.checked) {
         debugInfo.classList.remove('hidden');
-        if (searchInput.value.trim()) {
-            updateDebugInfo(searchInput.value);
-        }
     } else {
         debugInfo.classList.add('hidden');
     }

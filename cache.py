@@ -1,30 +1,40 @@
 import hashlib
-import time
+import json
+import os
 from typing import Dict, Any, Tuple, List
 import bisect
+import redis.asyncio as redis
 
 class CacheNode:
-    def __init__(self, name: str):
+    def __init__(self, name: str, host: str):
         self.name = name
-        # store: dict[prefix] = (expiry_timestamp, data)
-        self.store: Dict[str, Tuple[float, Any]] = {}
+        # Connect to a specific Redis container
+        self.redis = redis.Redis(host=host, port=6379, db=0, decode_responses=True)
 
-    def get(self, key: str) -> Any:
-        if key in self.store:
-            expiry, data = self.store[key]
-            if time.time() < expiry:
-                return data
-            else:
-                # Expired
-                del self.store[key]
+    async def get(self, key: str) -> Any:
+        try:
+            data = await self.redis.get(key)
+            if data:
+                return json.loads(data)
+        except Exception as e:
+            print(f"Redis get error on {self.name}: {e}")
         return None
 
-    def set(self, key: str, value: Any, ttl_seconds: float = 60):
-        expiry = time.time() + ttl_seconds
-        self.store[key] = (expiry, value)
+    async def set(self, key: str, value: Any, ttl_seconds: int = 60):
+        try:
+            # Store as JSON string with an expiration TTL
+            await self.redis.setex(key, ttl_seconds, json.dumps(value))
+        except Exception as e:
+            print(f"Redis set error on {self.name}: {e}")
         
-    def clear(self):
-        self.store.clear()
+    async def clear(self):
+        try:
+            await self.redis.flushdb()
+        except:
+            pass
+
+    async def close(self):
+        await self.redis.close()
 
 class ConsistentHashRing:
     def __init__(self, nodes: List[CacheNode], vnodes: int = 100):
@@ -53,6 +63,12 @@ class ConsistentHashRing:
             idx = 0
         return self.ring[self.sorted_keys[idx]]
 
-# Initialize nodes
-nodes = [CacheNode("node-1"), CacheNode("node-2"), CacheNode("node-3")]
+# Initialize nodes from environment variable (comma separated)
+redis_nodes_env = os.getenv("REDIS_NODES", "localhost")
+node_hosts = redis_nodes_env.split(",")
+
+nodes = []
+for host in node_hosts:
+    nodes.append(CacheNode(host, host))
+
 hash_ring = ConsistentHashRing(nodes)

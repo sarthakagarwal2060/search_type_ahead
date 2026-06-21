@@ -2,4 +2,6 @@ fastapi
 uvicorn
 pydantic
 aiofiles
-aiosqlite
+redis
+asyncpg
+psycopg2-binary

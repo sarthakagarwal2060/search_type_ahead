@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  postgres_db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: typeahead_user
+      POSTGRES_PASSWORD: typeahead_password
+      POSTGRES_DB: typeahead_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  redis_1:
+    image: redis:alpine
+  redis_2:
+    image: redis:alpine
+  redis_3:
+    image: redis:alpine
+
+  api_1:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://typeahead_user:typeahead_password@postgres_db:5432/typeahead_db
+      - REDIS_NODES=redis_1,redis_2,redis_3
+      - INIT_DB=true
+    depends_on:
+      - postgres_db
+      - redis_1
+      - redis_2
+      - redis_3
+
+  api_2:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://typeahead_user:typeahead_password@postgres_db:5432/typeahead_db
+      - REDIS_NODES=redis_1,redis_2,redis_3
+      - INIT_DB=false
+    depends_on:
+      - postgres_db
+      - redis_1
+      - redis_2
+      - redis_3
+
+  load_balancer:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api_1
+      - api_2
+
+volumes:
+  pg_data:

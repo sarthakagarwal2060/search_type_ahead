@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+typeahead.db
+dataset/queries.csv
+.git/
+.gitignore
+README.md

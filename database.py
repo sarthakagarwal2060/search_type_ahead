@@ -1,30 +1,36 @@
-import aiosqlite
-import logging
+import os
+import asyncpg
 
-DB_FILE = "typeahead.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://typeahead_user:typeahead_password@localhost:5432/typeahead_db")
+
+# Global connection pool
+pool = None
+
+import asyncio
 
 async def init_db():
-    async with aiosqlite.connect(DB_FILE) as db:
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS queries (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                query TEXT UNIQUE NOT NULL,
-                count INTEGER DEFAULT 1,
-                last_searched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        # Index on query for fast prefix searching
-        await db.execute("CREATE INDEX IF NOT EXISTS idx_query ON queries (query)")
-        # Index on count for sorting
-        await db.execute("CREATE INDEX IF NOT EXISTS idx_count ON queries (count DESC)")
-        await db.commit()
-        logging.info("Database initialized successfully.")
+    global pool
+    for attempt in range(15):
+        try:
+            pool = await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=10)
+            async with pool.acquire() as conn:
+                # Create table
+                await conn.execute("""
+                    CREATE TABLE IF NOT EXISTS queries (
+                        query TEXT PRIMARY KEY,
+                        count BIGINT DEFAULT 1,
+                        last_searched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+                """)
+                # Create a specialized index for fast prefix lookups in Postgres
+                await conn.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_query ON queries (query text_pattern_ops);
+                """)
+            print("Database initialized successfully.")
+            return
+        except Exception as e:
+            print(f"Database initialization error (Attempt {attempt+1}): {e}. Retrying in 2s...")
+            await asyncio.sleep(2)
 
-async def get_db():
-    db = await aiosqlite.connect(DB_FILE)
-    # Return dictionary-like rows
-    db.row_factory = aiosqlite.Row
-    try:
-        yield db
-    finally:
-        await db.close()
+def get_pool():
+    return pool
