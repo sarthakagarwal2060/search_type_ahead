@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Database
+*.db
+*.sqlite3
+typeahead.db
+
+# Dataset
+dataset/queries.csv
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store

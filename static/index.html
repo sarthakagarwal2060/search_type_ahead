@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Search Typeahead</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="url(#gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#3b82f6" />
+                            <stop offset="100%" stop-color="#8b5cf6" />
+                        </linearGradient>
+                    </defs>
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <h1>Search</h1>
+            </div>
+            <p class="subtitle">Discover trending topics and instant suggestions.</p>
+        </header>
+        
+        <main>
+            <div class="search-wrapper">
+                <div class="input-container">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="searchInput" placeholder="What are you looking for?" autocomplete="off">
+                    <button id="clearButton" class="clear-button hidden" aria-label="Clear search">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                    <button id="searchButton" class="action-button">Search</button>
+                </div>
+                
+                <div id="suggestionsBox" class="suggestions-box hidden">
+                    <ul id="suggestionsList"></ul>
+                </div>
+            </div>
+
+            <div id="trendingSection" class="trending-section">
+                <h2>Trending Searches <span class="badge">Hot</span></h2>
+                <div id="trendingList" class="trending-tags">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+            
+            <div class="debug-toggle">
+                <label>
+                    <input type="checkbox" id="debugToggle">
+                    Show Cache Debug Info
+                </label>
+            </div>
+
+            <div id="debugInfo" class="debug-info hidden">
+                <h3>Cache Routing</h3>
+                <div id="debugContent" class="debug-content">No data yet</div>
+            </div>
+        </main>
+        
+        <div id="toast" class="toast hidden"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
