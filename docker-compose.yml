@@ -30,6 +30,8 @@ services:
       - redis_1
       - redis_2
       - redis_3
+    volumes:
+      - ./dataset:/app/dataset
 
   api_2:
     build: .
